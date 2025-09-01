@@ -10,3 +10,5 @@ python-dotenv==1.0.0
 bcrypt==4.1.2
 pandas_ta
 SQLAlchemy
+pymongo==4.6.0
+motor==3.3.2

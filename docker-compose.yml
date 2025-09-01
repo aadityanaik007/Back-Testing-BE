@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: backtest-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: backtest_db
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - backtest-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backtest-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DEVELOPMENT_MODE=true
+      - DEV_USER_ID=1
+      - SECRET_KEY=your-super-secret-jwt-key-change-this-in-production-with-strong-random-string
+      - DATABASE_URL=sqlite:///./backtest.db
+      - MONGODB_URL=mongodb://admin:password123@mongodb:27017/backtest_db?authSource=admin
+      - MONGODB_DATABASE=backtest_db
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=True
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/app
+      - /app/env
+    networks:
+      - backtest-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  backtest-network:
+    driver: bridge

@@ -1,0 +1,22 @@
+# Backend .dockerignore
+env/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.coverage
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.git/
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+*.db
+*.sqlite
+*.sqlite3

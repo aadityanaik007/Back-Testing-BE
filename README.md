@@ -1,34 +1,20 @@
-## Backtest Backend - Quick Start
+# Backtest Backend - Docker Compose
 
-### Prerequisites
+## Running with Docker
 
-- Python 3.12 (recommended)
-- (Optional) Create and activate a virtual environment:
+Start the backend and MongoDB services:
 
-```
-python -m venv env
-env\Scripts\activate  # Windows
+```bash
+docker-compose up -d
 ```
 
-### Install dependencies
+Stop the services:
 
-```
-pip install -r requirements.txt
-```
-
-### Run the backend server
-
-```
-start_server.bat
+```bash
+docker-compose down
 ```
 
-or
+## Services
 
-```
-python main.py
-```
-
-### Notes
-
-- The backend uses FastAPI (see `main.py`).
-- The database file is `backtest.db`.
+- **Backend API**: http://localhost:8000
+- **MongoDB**: localhost:27017
