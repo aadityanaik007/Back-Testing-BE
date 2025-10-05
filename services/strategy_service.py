@@ -19,7 +19,8 @@ class StrategyService:
             "config": strategy.config.dict(),
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
-            "is_active": True
+            "is_active": True,
+            "backtest_completed": False
         }
         
         result = self.collection.insert_one(strategy_doc)
@@ -96,7 +97,8 @@ class StrategyService:
             "config": original["config"],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
-            "is_active": True
+            "is_active": True,
+            "backtest_completed": False
         }
         
         result = self.collection.insert_one(duplicated_doc)
@@ -111,14 +113,55 @@ class StrategyService:
             "is_active": True
         })
     
+    def mark_backtest_completed(self, strategy_id: str, user: User) -> bool:
+        """Mark a strategy as having completed backtest"""
+        result = self.collection.update_one(
+            {"_id": ObjectId(strategy_id), "user_id": user.id},
+            {"$set": {"backtest_completed": True, "updated_at": datetime.utcnow()}}
+        )
+        
+        return result.modified_count > 0
+
     def _doc_to_response(self, doc: dict) -> StrategyResponse:
         """Convert MongoDB document to StrategyResponse"""
-        from schemas.strategy import StrategyConfig, FilterCondition
+        from schemas.strategy import StrategyConfig, FilterCondition, LegConfig
         
         # Convert config dict back to StrategyConfig
         config_data = doc["config"]
-        filters = [FilterCondition(**filter_data) for filter_data in config_data["filters"]]
-        config = StrategyConfig(timeFrame=config_data["timeFrame"], filters=filters)
+        
+        # Handle filters (legacy field)
+        filters = []
+        if "filters" in config_data and config_data["filters"]:
+            filters = [FilterCondition(**filter_data) for filter_data in config_data["filters"]]
+        
+        # Handle legs (new field)
+        legs = []
+        if "legs" in config_data and config_data["legs"]:
+            legs = [LegConfig(**leg_data) for leg_data in config_data["legs"]]
+        
+        # Create comprehensive config object
+        config = StrategyConfig(
+            # Legacy fields
+            timeFrame=config_data.get("timeFrame"),
+            filters=filters,
+            # New comprehensive fields
+            index=config_data.get("index"),
+            expiry=config_data.get("expiry"),
+            strategyDuration=config_data.get("strategyDuration"),
+            entryTime=config_data.get("entryTime"),
+            exitTime=config_data.get("exitTime"),
+            noReentryAfter=config_data.get("noReentryAfter"),
+            noExitAfter=config_data.get("noExitAfter"),
+            overlapEntryAllowed=config_data.get("overlapEntryAllowed", False),
+            legwiseExit=config_data.get("legwiseExit", False),
+            legwiseSquareoff=config_data.get("legwiseSquareoff"),
+            totalStopLoss=config_data.get("totalStopLoss", 0),
+            totalTarget=config_data.get("totalTarget", 0),
+            timeExit=config_data.get("timeExit", 0),
+            trailingSL=config_data.get("trailingSL", 0),
+            technicalSignal=config_data.get("technicalSignal"),
+            legs=legs
+        )
         
         return StrategyResponse(
             id=str(doc["_id"]),
@@ -127,5 +170,6 @@ class StrategyService:
             config=config,
             created_at=doc["created_at"],
             updated_at=doc["updated_at"],
-            is_active=doc["is_active"]
+            is_active=doc["is_active"],
+            backtest_completed=doc.get("backtest_completed", False)
         )

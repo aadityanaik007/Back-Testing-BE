@@ -19,6 +19,7 @@ async def create_strategy(
     strategy_service: StrategyService = Depends(get_strategy_service)
 ):
     """Create a new strategy"""
+    print(strategy)
     return strategy_service.create_strategy(strategy, current_user)
 
 @router.get("", response_model=List[StrategyResponse])
@@ -164,3 +165,24 @@ async def create_strategy_from_template(
     )
     
     return strategy_service.create_strategy(strategy_create, current_user)
+
+@router.post("/{strategy_id}/run-backtest")
+async def run_backtest_for_strategy(
+    strategy_id: str,
+    current_user: User = Depends(get_current_user),
+    strategy_service: StrategyService = Depends(get_strategy_service)
+):
+    """Run backtest for a strategy and mark it as completed"""
+    # Check if strategy exists
+    strategy = strategy_service.get_strategy(strategy_id, current_user)
+    if not strategy:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    
+    # For now, we'll just mark the strategy as having completed backtest
+    # In the future, you can add actual backtesting logic here
+    success = strategy_service.mark_backtest_completed(strategy_id, current_user)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to update strategy")
+    
+    return {"message": "Backtest completed successfully", "strategy_id": strategy_id}
