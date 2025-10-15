@@ -31,9 +31,14 @@ app.include_router(bull_credit.router)
 async def root():
     return {"message": "Backtest API Server", "version": settings.API_VERSION}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Docker and monitoring"""
+    return {
+        "status": "healthy",
+        "service": "backtest-api",
+        "version": settings.API_VERSION
+    }
 
 if __name__ == "__main__":
     import uvicorn
